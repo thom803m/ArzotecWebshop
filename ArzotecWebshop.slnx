@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ArzotecWebshop.API/ArzotecWebshop.API.csproj" />
+  <Project Path="ArzotecWebshop.Core/ArzotecWebshop.Core.csproj" />
+  <Project Path="ArzotecWebshop.Infrastructure/ArzotecWebshop.Infrastructure.csproj" />
+</Solution>
