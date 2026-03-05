@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace ArzotecWebshop.Core.Models
 {
+    [Index(nameof(Name), IsUnique = true)]
     public class Brand
     {
         public int Id { get; set; }
