@@ -1,4 +1,5 @@
-﻿using ArzotecWebshop.Core.Interfaces;
+﻿using ArzotecWebshop.Core.Interfaces.Repositories;
+using ArzotecWebshop.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArzotecWebshop.API.Controllers
@@ -7,17 +8,17 @@ namespace ArzotecWebshop.API.Controllers
     [Route("api/[Controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductRepository _productRepository;
+        private readonly IProductService _productService;
 
-        public ProductsController(IProductRepository productRepository)
+        public ProductsController(IProductService productService)
         {
-            _productRepository = productRepository;
+            _productService = productService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetProducts()
         {
-            var products = await _productRepository.GetAllAsync();
+            var products = await _productService.GetAllProductsAsync();
             return Ok(products);
         }
     }

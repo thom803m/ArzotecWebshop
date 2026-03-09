@@ -1,4 +1,4 @@
-﻿using ArzotecWebshop.Core.Interfaces;
+﻿using ArzotecWebshop.Core.Interfaces.Repositories;
 using ArzotecWebshop.Core.Models;
 using ArzotecWebshop.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

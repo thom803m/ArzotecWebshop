@@ -1,6 +1,6 @@
 ﻿using ArzotecWebshop.Core.Models;
 
-namespace ArzotecWebshop.Core.Interfaces
+namespace ArzotecWebshop.Core.Interfaces.Repositories
 {
     public interface IProductRepository
     {
