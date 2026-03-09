@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ArzotecWebshop.Infrastructure.Data;
+using ArzotecWebshop.Infrastructure.Integrations.Rackbeat;
 using ArzotecWebshop.Infrastructure.Repositories;
 using ArzotecWebshop.Infrastructure.Services;
 using ArzotecWebshop.Core.Interfaces.Repositories;
@@ -24,6 +25,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 builder.Services.AddScoped<IProductService, ProductService>();
+
+builder.Services.AddScoped<IRackbeatSyncService, RackbeatSyncService>();
+
+builder.Services.AddHttpClient<RackbeatClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.rackbeat.com/");
+});
 
 var app = builder.Build();
 
