@@ -22,7 +22,7 @@ namespace ArzotecWebshop.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Product?> GetProductSkuAsync(string sku)
+        public async Task<Product?> GetBySkuAsync(string sku)
         {
             return await _context.Products
                 .FirstOrDefaultAsync(p => p.Sku == sku);

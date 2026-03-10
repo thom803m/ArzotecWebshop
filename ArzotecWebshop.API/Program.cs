@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
-using ArzotecWebshop.Infrastructure.Data;
-using ArzotecWebshop.Infrastructure.Integrations.Rackbeat;
-using ArzotecWebshop.Infrastructure.Repositories;
-using ArzotecWebshop.Infrastructure.Services;
 using ArzotecWebshop.Core.Interfaces.Repositories;
 using ArzotecWebshop.Core.Interfaces.Services;
+using ArzotecWebshop.Infrastructure.Data;
+using ArzotecWebshop.Infrastructure.Repositories;
+using ArzotecWebshop.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,15 +22,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-
 builder.Services.AddScoped<IProductService, ProductService>();
-
-builder.Services.AddScoped<IRackbeatSyncService, RackbeatSyncService>();
-
-builder.Services.AddHttpClient<RackbeatClient>(client =>
-{
-    client.BaseAddress = new Uri("https://api.rackbeat.com/");
-});
+builder.Services.AddScoped<IProductImportService, ProductImportService>();
 
 var app = builder.Build();
 

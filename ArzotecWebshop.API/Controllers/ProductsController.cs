@@ -1,5 +1,4 @@
-﻿using ArzotecWebshop.Core.Interfaces.Repositories;
-using ArzotecWebshop.Core.Interfaces.Services;
+﻿using ArzotecWebshop.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArzotecWebshop.API.Controllers
