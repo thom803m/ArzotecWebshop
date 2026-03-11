@@ -1,6 +1,6 @@
 ﻿
 
-namespace ArzotecWebshop.Core.DTOs
+namespace ArzotecWebshop.Core.DTOs.Import
 {
     public class ProductImportDto
     {

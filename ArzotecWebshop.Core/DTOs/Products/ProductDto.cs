@@ -1,6 +1,6 @@
 ﻿
 
-namespace ArzotecWebshop.Core.DTOs
+namespace ArzotecWebshop.Core.DTOs.Products
 {
     public class ProductDto
     {

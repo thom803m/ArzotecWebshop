@@ -1,4 +1,5 @@
-﻿using ArzotecWebshop.Core.Interfaces.Services;
+﻿using ArzotecWebshop.Core.DTOs.Products;
+using ArzotecWebshop.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ArzotecWebshop.API.Controllers
@@ -15,10 +16,11 @@ namespace ArzotecWebshop.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts([FromQuery] ProductQueryParameters parameters)
         {
-            var products = await _productService.GetAllProductsAsync();
-            return Ok(products);
+            var result = await _productService.GetProductsAsync(parameters);
+
+            return Ok(result);
         }
     }
 }

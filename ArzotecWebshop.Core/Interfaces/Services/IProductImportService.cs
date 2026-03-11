@@ -1,4 +1,4 @@
-﻿using ArzotecWebshop.Core.DTOs;
+﻿using ArzotecWebshop.Core.DTOs.Import;
 
 namespace ArzotecWebshop.Core.Interfaces.Services
 {

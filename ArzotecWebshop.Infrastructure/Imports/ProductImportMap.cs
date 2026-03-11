@@ -1,4 +1,4 @@
-﻿using ArzotecWebshop.Core.DTOs;
+﻿using ArzotecWebshop.Core.DTOs.Import;
 using CsvHelper.Configuration;
 
 namespace ArzotecWebshop.Infrastructure.Imports

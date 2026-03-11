@@ -1,4 +1,4 @@
-﻿using ArzotecWebshop.Core.DTOs;
+﻿using ArzotecWebshop.Core.DTOs.Import;
 using ArzotecWebshop.Core.Interfaces.Repositories;
 using ArzotecWebshop.Core.Interfaces.Services;
 using ArzotecWebshop.Core.Models;

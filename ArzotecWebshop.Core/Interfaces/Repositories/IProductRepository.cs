@@ -1,4 +1,6 @@
-﻿using ArzotecWebshop.Core.Models;
+﻿using ArzotecWebshop.Core.DTOs.Common;
+using ArzotecWebshop.Core.DTOs.Products;
+using ArzotecWebshop.Core.Models;
 
 namespace ArzotecWebshop.Core.Interfaces.Repositories
 {
@@ -6,6 +8,7 @@ namespace ArzotecWebshop.Core.Interfaces.Repositories
     {
         Task<List<Product>> GetAllAsync();
         Task<Product?> GetBySkuAsync(string sku);
+        Task<PagedResult<Product>> GetPagedAsync(ProductQueryParameters parameters);
         Task AddAsync (Product product);
         Task SaveChangesAsync();
     }
