@@ -28,13 +28,15 @@ namespace ArzotecWebshop.Infrastructure.Repositories
         public async Task<Product?> GetBySkuAsync(string sku)
         {
             return await _context.Products
+                .Include(p => p.Brand)
+                .Include(p => p.Category)
                 .FirstOrDefaultAsync(p => p.Sku == sku);
         }
 
         public async Task<PagedResult<Product>> GetPagedAsync(ProductQueryParameters parameters)
         {
             var page = parameters.Page <= 0 ? 1 : parameters.Page;
-            var pageSize = parameters.PageSize <= 0 ? 20 : parameters.PageSize;
+            var pageSize = parameters.PageSize <= 0 ? 20 : Math.Min(parameters.PageSize, 100);
 
             var query = _context.Products
                 .AsNoTracking()
@@ -44,8 +46,15 @@ namespace ArzotecWebshop.Infrastructure.Repositories
 
             if (!string.IsNullOrWhiteSpace(parameters.Search))
             {
+                var searchTerm = parameters.Search.Trim();
+                var search = $"%{searchTerm}%";
+
                 query = query.Where(p =>
-                    p.Name.Contains(parameters.Search));
+                    EF.Functions.Like(p.Name, search) ||
+                    EF.Functions.Like(p.Description, search) ||
+                    EF.Functions.Like(p.Sku, search) ||
+                    EF.Functions.Like(p.Brand.Name, search) ||
+                    EF.Functions.Like(p.Category.Name, search));
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.Brand))
@@ -88,9 +97,27 @@ namespace ArzotecWebshop.Infrastructure.Repositories
             };
         }
 
+        public async Task<Product?> GetByIdAsync(int id)
+        {
+            return await _context.Products
+                .Include(p => p.Brand)
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
         public async Task AddAsync(Product product)
         {
             await _context.Products.AddAsync(product);
+        }
+
+        public void Update(Product product)
+        {
+            _context.Products.Update(product);
+        }
+
+        public void Delete(Product product)
+        {
+            _context.Products.Remove(product);
         }
 
         public async Task SaveChangesAsync()

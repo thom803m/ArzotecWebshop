@@ -9,7 +9,10 @@ namespace ArzotecWebshop.Core.Interfaces.Repositories
         Task<List<Product>> GetAllAsync();
         Task<Product?> GetBySkuAsync(string sku);
         Task<PagedResult<Product>> GetPagedAsync(ProductQueryParameters parameters);
+        Task<Product?> GetByIdAsync(int id);
         Task AddAsync (Product product);
+        void Update (Product product);
+        void Delete (Product product);
         Task SaveChangesAsync();
     }
 }
