@@ -1,5 +1,6 @@
 ﻿using ArzotecWebshop.Core.DTOs.Import;
 using CsvHelper.Configuration;
+using System.Globalization;
 
 namespace ArzotecWebshop.Infrastructure.Imports
 {
@@ -7,12 +8,14 @@ namespace ArzotecWebshop.Infrastructure.Imports
     {
         public ProductImportMap()
         {
-            Map(m => m.Sku).Name("SKU", "sku", "ProductNumber");
-            Map(m => m.Name).Name("Name", "ProductName");
-            Map(m => m.Price).Name("Price", "SalesPrice");
-            Map(m => m.StockQuantity).Name("Stock", "Quantity");
-            Map(m => m.Brand).Name("Brand", "BrandName");
-            Map(m => m.Category).Name("Category", "CategoryName");
+            Map(m => m.Sku).Name("SKU", "Sku", "sku", "SKUNumber", "SKU Number", "SKU_Number", "SkuNumber", "Sku Number", "Sku_Number", "skunumber", "sku number", "sku_number", "ProductNumber", "Product Number", "Product_Number", "productnumber", "product number", "product_number", "ProductNo.", "Product No.", "Product_No.", "Productno.", "Product no.", "Product_no.", "productno.", "product no.", "product_no.");
+            Map(m => m.Name).Name("Name", "name", "ProductName", "Product Name", "Product_Name", "productname", "product name", "product_name", "ProductItem", "Product Item", "Product_Item", "productitem", "product item", "product_item");
+            Map(m => m.Available).Name("Available", "available", "AvailableQuantity", "Available Quantity", "Available_Quantity", "availablequantity", "available quantity", "available_quantity", "Stock", "stock", "Quantity", "quantity", "StockQuantity", "Stock Quantity", "Stock_Quantity", "stockquantity", "stock quantity", "stock_quantity", "AvailableStock", "Available Stock", "Available_Stock", "availablestock", "available stock", "available_stock");
+            Map(m => m.Purchased).Name("Purchased", "purchased", "PurchasedQuantity", "Purchased Quantity", "Purchased_Quantity", "purchasedquantity", "purchased quantity", "purchased_quantity");
+            Map(m => m.Ean).Name("EAN", "Ean", "ean", "EANCode", "EAN Code", "EAN_Code", "EanCode", "Ean Code", "Ean_Code", "eancode", "ean code", "ean_code", "EANNumber", "EAN Number", "EAN_Number", "EanNumber", "Ean Number", "Ean_Number", "eanumber", "ean number", "ean_number", "Barcode", "barcode", "BarCode");
+            Map(m => m.Price).Name("Price", "price", "SalesPrice", "Sales Price", "Sales_Price", "salesprice", "sales price", "sales_price", "SalesPrice (EUR)", "SalesPrice_(EUR)", "Sales Price (EUR)", "Sales_Price_(EUR)", "Sales price (EUR)", "Sales_price_(EUR)", "salesprice (EUR)", "salesprice_(EUR)", "sales price (EUR)", "sales_price_(EUR)", "ProductPrice", "Product Price", "Product_Price", "productprice", "product price", "product_price").TypeConverterOption.CultureInfo(new CultureInfo("da-DK")); ;
+            Map(m => m.Brand).Name("Brand", "brand", "Brandname", "Brand name", "Brand_name", "brandname", "brand name", "brand_name", "Producer", "producer", "Producername", "Producer name", "Producer_name", "producername", "producer name", "producer_name", "Manufacturer", "manufacturer", "Manufacturername", "Manufacturer name", "Manufacturer_name", "manufacturername", "manufacturer name", "manufacturer_name");
+            Map(m => m.Category).Name("Category", "category", "Categoryname", "Category name", "Category_name", "categoryname", "category name", "category_name", "Productcategory", "Product category", "Product_category", "productcategory", "product category", "product_category");
         }
     }
 }

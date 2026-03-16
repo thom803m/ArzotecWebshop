@@ -30,6 +30,7 @@ namespace ArzotecWebshop.Infrastructure.Services
                 Name = product.Name,
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
+                Ean = product.Ean,
                 Brand = product.Brand?.Name,
                 Category = product.Category?.Name
             };
@@ -92,6 +93,7 @@ namespace ArzotecWebshop.Infrastructure.Services
                 Description = dto.Description,
                 Price = dto.Price,
                 StockQuantity = dto.StockQuantity,
+                Ean = dto.Ean,
                 Brand = brand,
                 Category = category,
                 LastSynced = DateTime.UtcNow
@@ -106,15 +108,43 @@ namespace ArzotecWebshop.Infrastructure.Services
         public async Task<ProductDto?> UpdateProductAsync(int id, UpdateProductDto dto)
         {
             var product = await _productRepository.GetByIdAsync(id);
-
             if (product == null)
                 return null;
 
+            Brand? brand = null;
+            if (!string.IsNullOrWhiteSpace(dto.Brand))
+            {
+                brand = await _context.Brands
+                    .FirstOrDefaultAsync(b => b.Name == dto.Brand);
+
+                if (brand == null)
+                {
+                    brand = new Brand { Name = dto.Brand.Trim() };
+                    _context.Brands.Add(brand);
+                }
+            }
+
+            Category? category = null;
+            if (!string.IsNullOrWhiteSpace(dto.Category))
+            {
+                category = await _context.Categories
+                    .FirstOrDefaultAsync(c => c.Name == dto.Category);
+
+                if (category == null)
+                {
+                    category = new Category { Name = dto.Category.Trim() };
+                    _context.Categories.Add(category);
+                }
+            }
+
+            product.Sku = dto.Sku;
             product.Name = dto.Name;
             product.Description = dto.Description;
             product.Price = dto.Price;
             product.StockQuantity = dto.StockQuantity;
-            
+            product.Ean = dto.Ean;
+            product.Brand = brand;
+            product.Category = category;
 
             _productRepository.Update(product);
             await _productRepository.SaveChangesAsync();

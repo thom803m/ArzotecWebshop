@@ -22,6 +22,7 @@ namespace ArzotecWebshop.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .OrderBy(p => p.Id)
                 .ToListAsync();
         }
 
@@ -36,12 +37,13 @@ namespace ArzotecWebshop.Infrastructure.Repositories
         public async Task<PagedResult<Product>> GetPagedAsync(ProductQueryParameters parameters)
         {
             var page = parameters.Page <= 0 ? 1 : parameters.Page;
-            var pageSize = parameters.PageSize <= 0 ? 20 : Math.Min(parameters.PageSize, 100);
+            var pageSize = parameters.PageSize <= 0 ? 1000 : parameters.PageSize;
 
             var query = _context.Products
                 .AsNoTracking()
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .OrderBy(p => p.Id)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(parameters.Search))
@@ -51,22 +53,22 @@ namespace ArzotecWebshop.Infrastructure.Repositories
 
                 query = query.Where(p =>
                     EF.Functions.Like(p.Name, search) ||
-                    EF.Functions.Like(p.Description, search) ||
                     EF.Functions.Like(p.Sku, search) ||
-                    EF.Functions.Like(p.Brand.Name, search) ||
-                    EF.Functions.Like(p.Category.Name, search));
+                    EF.Functions.Like(p.Ean, search) ||
+                    (p.Brand != null && EF.Functions.Like(p.Brand.Name, search)) ||
+                    (p.Category != null && EF.Functions.Like(p.Category.Name, search)));
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.Brand))
             {
                 query = query.Where(p =>
-                    p.Brand.Name == parameters.Brand);
+                    p.Brand != null && p.Brand.Name == parameters.Brand);
             }
 
             if (!string.IsNullOrWhiteSpace(parameters.Category))
             {
                 query = query.Where(p =>
-                    p.Category.Name == parameters.Category);
+                    p.Category != null && p.Category.Name == parameters.Category);
             }
 
             if (parameters.MinPrice.HasValue)
