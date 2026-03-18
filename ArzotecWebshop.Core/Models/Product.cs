@@ -17,5 +17,6 @@ namespace ArzotecWebshop.Core.Models
         public Brand? Brand { get; set; }
         public int? CategoryId { get; set; }
         public Category? Category { get; set; }
+        public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     }
 }

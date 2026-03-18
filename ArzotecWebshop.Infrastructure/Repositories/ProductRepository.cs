@@ -22,6 +22,7 @@ namespace ArzotecWebshop.Infrastructure.Repositories
                 .AsNoTracking()
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .OrderBy(p => p.Id)
                 .ToListAsync();
         }
@@ -31,18 +32,20 @@ namespace ArzotecWebshop.Infrastructure.Repositories
             return await _context.Products
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Sku == sku);
         }
 
         public async Task<PagedResult<Product>> GetPagedAsync(ProductQueryParameters parameters)
         {
             var page = parameters.Page <= 0 ? 1 : parameters.Page;
-            var pageSize = parameters.PageSize <= 0 ? 1000 : parameters.PageSize;
+            var pageSize = parameters.PageSize <= 0 ? 20 : parameters.PageSize;
 
             var query = _context.Products
                 .AsNoTracking()
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .OrderBy(p => p.Id)
                 .AsQueryable();
 
@@ -104,6 +107,7 @@ namespace ArzotecWebshop.Infrastructure.Repositories
             return await _context.Products
                 .Include(p => p.Brand)
                 .Include(p => p.Category)
+                .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 

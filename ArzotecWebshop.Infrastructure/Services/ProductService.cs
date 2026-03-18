@@ -32,7 +32,13 @@ namespace ArzotecWebshop.Infrastructure.Services
                 StockQuantity = product.StockQuantity,
                 Ean = product.Ean,
                 Brand = product.Brand?.Name,
-                Category = product.Category?.Name
+                Category = product.Category?.Name,
+                Images = product.Images.Select(i => new ProductImageDto
+                {
+                    Id = i.Id,
+                    Url = i.Url,
+                    IsPrimary = i.IsPrimary
+                }).ToList()
             };
         }
 

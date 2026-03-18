@@ -5,5 +5,7 @@ namespace ArzotecWebshop.Core.Interfaces.Services
     public interface IProductImportService
     {
         Task<ImportResult> ImportCsvAsync(Stream filestream);
+
+        Task<ImportResult> ImportXmlAsync(Stream filestream);
     }
 }

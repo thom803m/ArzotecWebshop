@@ -114,6 +114,31 @@ namespace ArzotecWebshop.Infrastructure.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("ArzotecWebshop.Core.Models.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
+                });
+
             modelBuilder.Entity("ArzotecWebshop.Core.Models.Product", b =>
                 {
                     b.HasOne("ArzotecWebshop.Core.Models.Brand", "Brand")
@@ -129,6 +154,17 @@ namespace ArzotecWebshop.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("ArzotecWebshop.Core.Models.ProductImage", b =>
+                {
+                    b.HasOne("ArzotecWebshop.Core.Models.Product", "Product")
+                        .WithMany("Images")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("ArzotecWebshop.Core.Models.Brand", b =>
                 {
                     b.Navigation("Products");
@@ -137,6 +173,11 @@ namespace ArzotecWebshop.Infrastructure.Migrations
             modelBuilder.Entity("ArzotecWebshop.Core.Models.Category", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ArzotecWebshop.Core.Models.Product", b =>
+                {
+                    b.Navigation("Images");
                 });
 #pragma warning restore 612, 618
         }

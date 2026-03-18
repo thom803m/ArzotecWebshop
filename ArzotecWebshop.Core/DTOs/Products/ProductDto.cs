@@ -13,5 +13,6 @@ namespace ArzotecWebshop.Core.DTOs.Products
         public string? Ean { get; set; }
         public string? Brand { get; set; }
         public string? Category { get; set; }
+        public List<ProductImageDto> Images { get; set; } = new();
     }
 }

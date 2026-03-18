@@ -8,6 +8,7 @@ using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Xml.Linq;
 
 namespace ArzotecWebshop.Infrastructure.Services
 {
@@ -15,21 +16,22 @@ namespace ArzotecWebshop.Infrastructure.Services
     {
         private readonly IProductRepository _productRepository;
         private readonly AppDbContext _context;
+        private readonly IProductImageService _productImageService;
 
         public ProductImportService(
             IProductRepository productRepository,
-            AppDbContext context)
+            AppDbContext context,
+            IProductImageService productImageService)
         {
             _productRepository = productRepository;
             _context = context;
+            _productImageService = productImageService;
         }
 
+        // CSV import
         public async Task<ImportResult> ImportCsvAsync(Stream filestream)
         {
-            var result = new ImportResult();
-
             using var reader = new StreamReader(filestream);
-
             var config = new CsvConfiguration(new CultureInfo("dk-DK"))
             {
                 HasHeaderRecord = true,
@@ -38,14 +40,39 @@ namespace ArzotecWebshop.Infrastructure.Services
                 HeaderValidated = null,
                 MissingFieldFound = null
             };
-
             using var csv = new CsvReader(reader, config);
             csv.Context.RegisterClassMap<ProductImportMap>();
-
             var records = csv.GetRecords<ProductImportDto>().ToList();
+            return await ImportRecordsAsync(records);
+        }
 
-            var existingProducts = await _context.Products
-                .ToDictionaryAsync(p => p.Sku);
+        // XML import
+        public async Task<ImportResult> ImportXmlAsync(Stream filestream)
+        {
+            var doc = XDocument.Load(filestream);
+            var records = doc.Descendants("Product")
+                .Select(x => new ProductImportDto
+                {
+                    Sku = (string)x.Element("Sku") ?? "",
+                    Name = (string)x.Element("Name") ?? "",
+                    Available = (int?)x.Element("Available") ?? 0,
+                    Purchased = (int?)x.Element("Purchased") ?? 0,
+                    Ean = (string)x.Element("Ean"),
+                    Price = (decimal?)x.Element("Price") ?? 0,
+                    Brand = (string)x.Element("Brand") ?? "",
+                    Category = (string)x.Element("Category") ?? "",
+                    ImageUrl = (string)x.Element("ImageUrl")
+                })
+                .ToList();
+
+            return await ImportRecordsAsync(records);
+        }
+
+        // Fælles import logik
+        private async Task<ImportResult> ImportRecordsAsync(List<ProductImportDto> records)
+        {
+            var result = new ImportResult();
+            var existingProducts = await _context.Products.ToDictionaryAsync(p => p.Sku);
 
             foreach (var r in records)
             {
@@ -57,67 +84,7 @@ namespace ArzotecWebshop.Infrastructure.Services
                         continue;
                     }
 
-                    var sku = NormalizeScientific(r.Sku);
-                    var ean = NormalizeScientific(r.Ean);
-
-                    existingProducts.TryGetValue(sku, out var existing);
-                    var stock = CalculateStock(r);
-
-                    Brand? brand = null;
-                    if (!string.IsNullOrWhiteSpace(r.Brand))
-                    {
-                        brand = await _context.Brands.FirstOrDefaultAsync(b => b.Name == r.Brand.Trim());
-                        if (brand == null)
-                        {
-                            brand = new Brand { Name = r.Brand.Trim() };
-                            await _context.Brands.AddAsync(brand);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-
-                    Category? category = null;
-                    if (!string.IsNullOrWhiteSpace(r.Category))
-                    {
-                        category = await _context.Categories.FirstOrDefaultAsync(c => c.Name == r.Category.Trim());
-                        if (category == null)
-                        {
-                            category = new Category { Name = r.Category.Trim() };
-                            await _context.Categories.AddAsync(category);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-
-                    if (existing == null)
-                    {
-                        var product = new Product
-                        {
-                            Sku = sku,
-                            Name = r.Name?.Trim() ?? "",
-                            Price = r.Price,
-                            StockQuantity = stock,
-                            Ean = ean,
-                            BrandId = brand?.Id,
-                            CategoryId = category?.Id,
-                            LastSynced = DateTime.UtcNow
-                        };
-
-                        await _productRepository.AddAsync(product);
-                        existingProducts[sku] = product;
-
-                        result.Created++;
-                    }
-                    else
-                    {
-                        existing.Name = r.Name?.Trim() ?? "";
-                        existing.Price = r.Price;
-                        existing.StockQuantity = stock;
-                        existing.Ean = ean;
-                        existing.BrandId = brand?.Id;
-                        existing.CategoryId = category?.Id;
-                        existing.LastSynced = DateTime.UtcNow;
-
-                        result.Updated++;
-                    }
+                    await ImportRecordAsync(r, result, existingProducts);
                 }
                 catch
                 {
@@ -129,26 +96,118 @@ namespace ArzotecWebshop.Infrastructure.Services
             return result;
         }
 
-        private static int CalculateStock(ProductImportDto record)
+        // Import af enkelt produkt
+        private async Task ImportRecordAsync(ProductImportDto r, ImportResult result, Dictionary<string, Product> existingProducts)
         {
-            return record.Available + record.Purchased;
-        }
+            var sku = NormalizeScientific(r.Sku);
+            var ean = NormalizeScientific(r.Ean);
+            existingProducts.TryGetValue(sku, out var existing);
+            var stock = CalculateStock(r);
 
-        private static string NormalizeScientific(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return "";
-
-            value = value.Trim();
-
-            if (value.Contains("E+") || value.Contains("e+"))
+            Brand? brand = null;
+            if (!string.IsNullOrWhiteSpace(r.Brand))
             {
-                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
+                brand = await _context.Brands.FirstOrDefaultAsync(b => b.Name == r.Brand.Trim());
+                if (brand == null)
                 {
-                    return ((long)number).ToString();
+                    brand = new Brand { Name = r.Brand.Trim() };
+                    await _context.Brands.AddAsync(brand);
+                    await _context.SaveChangesAsync();
                 }
             }
 
+            Category? category = null;
+            if (!string.IsNullOrWhiteSpace(r.Category))
+            {
+                category = await _context.Categories.FirstOrDefaultAsync(c => c.Name == r.Category.Trim());
+                if (category == null)
+                {
+                    category = new Category { Name = r.Category.Trim() };
+                    await _context.Categories.AddAsync(category);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            if (existing == null)
+            {
+                var product = new Product
+                {
+                    Sku = sku,
+                    Name = r.Name?.Trim() ?? "",
+                    Price = r.Price,
+                    StockQuantity = stock,
+                    Ean = ean,
+                    BrandId = brand?.Id,
+                    CategoryId = category?.Id,
+                    LastSynced = DateTime.UtcNow
+                };
+
+                await _productRepository.AddAsync(product);
+                await _productRepository.SaveChangesAsync();
+
+                existingProducts[sku] = product;
+                result.Created++;
+
+                if (!string.IsNullOrWhiteSpace(r.ImageUrl))
+                {
+                    var urls = r.ImageUrl.Split('|', StringSplitOptions.RemoveEmptyEntries);
+
+                    for (int i = 0; i < urls.Length; i++)
+                    {
+                        var uploaded = await _productImageService.UploadFromUrlAsync(product.Id, urls[i].Trim());
+
+                        // Første billede bliver altid primært
+                        if (uploaded != null && i == 0)
+                        {
+                            await _productImageService.SetPrimaryAsync(product.Id, uploaded.Id);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                existing.Name = r.Name?.Trim() ?? "";
+                existing.Price = r.Price;
+                existing.StockQuantity = stock;
+                existing.Ean = ean;
+                existing.BrandId = brand?.Id;
+                existing.CategoryId = category?.Id;
+                existing.LastSynced = DateTime.UtcNow;
+
+                _productRepository.Update(existing);
+                result.Updated++;
+
+                if (!string.IsNullOrWhiteSpace(r.ImageUrl))
+                {
+                    var hasImages = await _context.ProductImages.AnyAsync(i => i.ProductId == existing.Id);
+                    if (!hasImages)
+                    {
+                        var urls = r.ImageUrl.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                        for (int i = 0; i < urls.Length; i++)
+                        {
+                            var uploaded = await _productImageService.UploadFromUrlAsync(existing.Id, urls[i].Trim());
+                            if (uploaded != null && i == 0)
+                            {
+                                await _productImageService.SetPrimaryAsync(existing.Id, uploaded.Id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static int CalculateStock(ProductImportDto record) => record.Available + record.Purchased;
+
+        private static string NormalizeScientific(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "";
+
+            value = value.Trim();
+            if (value.Contains("E+") || value.Contains("e+"))
+            {
+                if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
+                    return ((long)number).ToString();
+            }
             return value;
         }
     }
