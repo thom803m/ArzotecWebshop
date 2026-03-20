@@ -6,6 +6,7 @@ using ArzotecWebshop.Infrastructure.Data;
 using ArzotecWebshop.Infrastructure.Imports;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Xml.Linq;
@@ -28,7 +29,6 @@ namespace ArzotecWebshop.Infrastructure.Services
             _productImageService = productImageService;
         }
 
-        // CSV import
         public async Task<ImportResult> ImportCsvAsync(Stream filestream)
         {
             using var reader = new StreamReader(filestream);
@@ -46,7 +46,6 @@ namespace ArzotecWebshop.Infrastructure.Services
             return await ImportRecordsAsync(records);
         }
 
-        // XML import
         public async Task<ImportResult> ImportXmlAsync(Stream filestream)
         {
             var doc = XDocument.Load(filestream);
@@ -68,11 +67,11 @@ namespace ArzotecWebshop.Infrastructure.Services
             return await ImportRecordsAsync(records);
         }
 
-        // Fælles import logik
         private async Task<ImportResult> ImportRecordsAsync(List<ProductImportDto> records)
         {
             var result = new ImportResult();
-            var existingProducts = await _context.Products.ToDictionaryAsync(p => p.Sku);
+            var existingProducts = await _context.Products
+                .ToDictionaryAsync(p => NormalizeScientific(p.Sku));
 
             foreach (var r in records)
             {
@@ -96,7 +95,6 @@ namespace ArzotecWebshop.Infrastructure.Services
             return result;
         }
 
-        // Import af enkelt produkt
         private async Task ImportRecordAsync(ProductImportDto r, ImportResult result, Dictionary<string, Product> existingProducts)
         {
             var sku = NormalizeScientific(r.Sku);
@@ -150,14 +148,16 @@ namespace ArzotecWebshop.Infrastructure.Services
 
                 if (!string.IsNullOrWhiteSpace(r.ImageUrl))
                 {
-                    var urls = r.ImageUrl.Split('|', StringSplitOptions.RemoveEmptyEntries);
+                    var urls = r.ImageUrl
+                        .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(u => u.Trim())
+                        .ToList();
 
-                    for (int i = 0; i < urls.Length; i++)
+                    foreach (var (url, index) in urls.Select((value, i) => (value, i)))
                     {
-                        var uploaded = await _productImageService.UploadFromUrlAsync(product.Id, urls[i].Trim());
+                        var uploaded = await _productImageService.UploadFromUrlAsync(product.Id, url);
 
-                        // Første billede bliver altid primært
-                        if (uploaded != null && i == 0)
+                        if (uploaded != null && index == 0)
                         {
                             await _productImageService.SetPrimaryAsync(product.Id, uploaded.Id);
                         }
@@ -182,11 +182,16 @@ namespace ArzotecWebshop.Infrastructure.Services
                     var hasImages = await _context.ProductImages.AnyAsync(i => i.ProductId == existing.Id);
                     if (!hasImages)
                     {
-                        var urls = r.ImageUrl.Split('|', StringSplitOptions.RemoveEmptyEntries);
-                        for (int i = 0; i < urls.Length; i++)
+                        var urls = r.ImageUrl
+                            .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(u => u.Trim())
+                            .ToList();
+
+                        foreach (var (url, index) in urls.Select((value, i) => (value, i)))
                         {
-                            var uploaded = await _productImageService.UploadFromUrlAsync(existing.Id, urls[i].Trim());
-                            if (uploaded != null && i == 0)
+                            var uploaded = await _productImageService.UploadFromUrlAsync(existing.Id, url);
+
+                            if (uploaded != null && index == 0)
                             {
                                 await _productImageService.SetPrimaryAsync(existing.Id, uploaded.Id);
                             }

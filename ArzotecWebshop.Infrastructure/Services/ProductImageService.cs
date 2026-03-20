@@ -9,16 +9,17 @@ namespace ArzotecWebshop.Infrastructure.Services
     public class ProductImageService : IProductImageService
     {
         private readonly AppDbContext _context;
-        private readonly string _basePath;
 
         public ProductImageService(AppDbContext context)
         {
             _context = context;
-            _basePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
         }
 
-        public async Task<ProductImage> UploadImageAsync(int productId, Stream fileStream, string fileName)
+        public async Task<ProductImage?> UploadFromUrlAsync(int productId, string imageUrl)
         {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return null;
+
             var product = await _context.Products
                 .Include(p => p.Images)
                 .FirstOrDefaultAsync(p => p.Id == productId);
@@ -26,28 +27,11 @@ namespace ArzotecWebshop.Infrastructure.Services
             if (product == null)
                 throw new Exception("Product not found");
 
-            var folderPath = Path.Combine(_basePath, "images", "products", productId.ToString());
-
-            if (!Directory.Exists(folderPath))
-                Directory.CreateDirectory(folderPath);
-
-            var extension = Path.GetExtension(fileName);
-            var newFileName = $"{Guid.NewGuid()}{extension}";
-            var filePath = Path.Combine(folderPath, newFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await fileStream.CopyToAsync(stream);
-            }
-
-            var isPrimary = !product.Images.Any();
-
             var image = new ProductImage
             {
                 ProductId = productId,
-                Url = $"/images/products/{productId}/{newFileName}",
-                IsPrimary = isPrimary,
-                //OriginalFileName = fileName
+                Url = imageUrl.Trim(),
+                IsPrimary = !product.Images.Any()
             };
 
             _context.ProductImages.Add(image);
@@ -82,54 +66,20 @@ namespace ArzotecWebshop.Infrastructure.Services
             if (image == null)
                 throw new Exception("Image not found");
 
-            var productId = image.ProductId;
-            var wasPrimary = image.IsPrimary;
-
-            var fullPath = Path.Combine(_basePath, image.Url.TrimStart('/'));
-
-            if (File.Exists(fullPath))
-                File.Delete(fullPath);
-
             _context.ProductImages.Remove(image);
-            await _context.SaveChangesAsync();
 
-            if (wasPrimary)
+            if (image.IsPrimary)
             {
-                var nextImage = await _context.ProductImages
-                    .Where(i => i.ProductId == productId)
+                var next = await _context.ProductImages
+                    .Where(i => i.ProductId == image.ProductId)
                     .OrderBy(i => i.Id)
                     .FirstOrDefaultAsync();
 
-                if (nextImage != null)
-                {
-                    nextImage.IsPrimary = true;
-                    await _context.SaveChangesAsync();
-                }
+                if (next != null)
+                    next.IsPrimary = true;
             }
-        }
 
-        public async Task<ProductImage?> UploadFromUrlAsync(int productId, string imageUrl)
-        {
-            if (string.IsNullOrWhiteSpace(imageUrl))
-                return null;
-
-            try
-            {
-                using var httpClient = new HttpClient();
-                var response = await httpClient.GetAsync(imageUrl);
-                if (!response.IsSuccessStatusCode)
-                    return null;
-
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                var fileName = Path.GetFileName(new Uri(imageUrl).LocalPath);
-
-                return await UploadImageAsync(productId, stream, fileName);
-            }
-            catch
-            {
-                // Log evt. fejl her
-                return null;
-            }
+            await _context.SaveChangesAsync();
         }
     }
 }

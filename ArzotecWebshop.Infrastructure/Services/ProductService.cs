@@ -1,4 +1,7 @@
-﻿using ArzotecWebshop.Core.DTOs.Common;
+﻿using ArzotecWebshop.Core.DTOs.Brands;
+using ArzotecWebshop.Core.DTOs.Categories;
+using ArzotecWebshop.Core.DTOs.Common;
+using ArzotecWebshop.Core.DTOs.Images;
 using ArzotecWebshop.Core.DTOs.Products;
 using ArzotecWebshop.Core.Interfaces.Repositories;
 using ArzotecWebshop.Core.Interfaces.Services;
@@ -21,6 +24,12 @@ namespace ArzotecWebshop.Infrastructure.Services
             _context = context;
         }
 
+        private static BrandDto? MapBrand(Brand? brand)
+            => brand == null ? null : new BrandDto { Id = brand.Id, Name = brand.Name };
+
+        private static CategoryDto? MapCategory(Category? category)
+            => category == null ? null : new CategoryDto { Id = category.Id, Name = category.Name };
+
         private static ProductDto MapToDto(Product product)
         {
             return new ProductDto
@@ -31,8 +40,8 @@ namespace ArzotecWebshop.Infrastructure.Services
                 Price = product.Price,
                 StockQuantity = product.StockQuantity,
                 Ean = product.Ean,
-                Brand = product.Brand?.Name,
-                Category = product.Category?.Name,
+                Brand = MapBrand(product.Brand),
+                Category = MapCategory(product.Category),
                 Images = product.Images.Select(i => new ProductImageDto
                 {
                     Id = i.Id,
@@ -67,30 +76,20 @@ namespace ArzotecWebshop.Infrastructure.Services
             var product = await _productRepository.GetByIdAsync(id);
 
             if (product == null)
-                return null;
+                throw new KeyNotFoundException("Product not found");
 
             return MapToDto(product);
         }
 
         public async Task<ProductDto?> CreateProductAsync(CreateProductDto dto)
         {
-            var brand = await _context.Brands
-                .FirstOrDefaultAsync(b => b.Name == dto.Brand);
-
+            var brand = await _context.Brands.FindAsync(dto.BrandId);
             if (brand == null)
-            {
-                brand = new Brand { Name = dto.Brand };
-                _context.Brands.Add(brand);
-            }
+                throw new KeyNotFoundException("Brand not found");
 
-            var category = await _context.Categories
-                .FirstOrDefaultAsync(c => c.Name == dto.Category);
-
+            var category = await _context.Categories.FindAsync(dto.CategoryId);
             if (category == null)
-            {
-                category = new Category { Name = dto.Category };
-                _context.Categories.Add(category);
-            }
+                throw new KeyNotFoundException("Category not found");
 
             var product = new Product
             {
@@ -115,33 +114,15 @@ namespace ArzotecWebshop.Infrastructure.Services
         {
             var product = await _productRepository.GetByIdAsync(id);
             if (product == null)
-                return null;
+                throw new KeyNotFoundException("Product not found");
 
-            Brand? brand = null;
-            if (!string.IsNullOrWhiteSpace(dto.Brand))
-            {
-                brand = await _context.Brands
-                    .FirstOrDefaultAsync(b => b.Name == dto.Brand);
+            var brand = await _context.Brands.FindAsync(dto.BrandId);
+            if (brand == null)
+                throw new KeyNotFoundException("Brand not found");
 
-                if (brand == null)
-                {
-                    brand = new Brand { Name = dto.Brand.Trim() };
-                    _context.Brands.Add(brand);
-                }
-            }
-
-            Category? category = null;
-            if (!string.IsNullOrWhiteSpace(dto.Category))
-            {
-                category = await _context.Categories
-                    .FirstOrDefaultAsync(c => c.Name == dto.Category);
-
-                if (category == null)
-                {
-                    category = new Category { Name = dto.Category.Trim() };
-                    _context.Categories.Add(category);
-                }
-            }
+            var category = await _context.Categories.FindAsync(dto.CategoryId);
+            if (category == null)
+                throw new KeyNotFoundException("Category not found");
 
             product.Sku = dto.Sku;
             product.Name = dto.Name;
@@ -161,9 +142,8 @@ namespace ArzotecWebshop.Infrastructure.Services
         public async Task<bool> DeleteProductAsync(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
-
             if (product == null)
-                return false;
+                throw new KeyNotFoundException("Product not found");
 
             _productRepository.Delete(product);
             await _productRepository.SaveChangesAsync();
