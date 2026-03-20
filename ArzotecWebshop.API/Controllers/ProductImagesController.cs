@@ -14,17 +14,19 @@ namespace ArzotecWebshop.API.Controllers
             _service = service;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Upload(int productId, IFormFile file)
+        // Only here for testing by typing the URL for the image
+        [HttpPost("url")]
+        public async Task<IActionResult> UploadFromUrl(int productId, [FromBody] string imageUrl)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest(new { Message = "File is required" });
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return BadRequest(new { Message = "Image URL is required" });
 
             try
             {
-                using var stream = file.OpenReadStream();
+                var image = await _service.UploadFromUrlAsync(productId, imageUrl);
 
-                var image = await _service.UploadImageAsync(productId, stream, file.FileName);
+                if (image == null)
+                    return BadRequest(new { Message = "Failed to add image from URL" });
 
                 return Ok(image);
             }

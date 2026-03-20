@@ -6,21 +6,20 @@ namespace ArzotecWebshop.API.Controllers
 {
     [ApiController]
     [Route("api/import")]
-    public class ImportController : ControllerBase
+    public class ImportsController : ControllerBase
     {
         private readonly IProductImportService _importService;
 
-        public ImportController(IProductImportService importService)
+        public ImportsController(IProductImportService importService)
         {
             _importService = importService;
         }
 
-        // Unified import endpoint (CSV eller XML)
         [HttpPost("file")]
         public async Task<IActionResult> ImportFile(IFormFile file)
         {
             if (file == null || file.Length == 0)
-                return BadRequest("Ingen fil blev uploadet.");
+                return BadRequest("No file was uploaded.");
 
             var fileName = file.FileName.ToLowerInvariant();
             ImportResult result;
@@ -35,7 +34,7 @@ namespace ArzotecWebshop.API.Controllers
             }
             else
             {
-                return BadRequest("Ugyldig filtype. Kun CSV eller XML understøttes.");
+                return BadRequest("Invalid file type. Only use CSV or XML.");
             }
 
             return Ok(result);

@@ -26,45 +26,64 @@ namespace ArzotecWebshop.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = await _productService.GetProductByIdAsync(id);
-
-            if (product == null)
-                return NotFound();
-
-            return Ok(product);
+            try
+            {
+                var product = await _productService.GetProductByIdAsync(id);
+                return Ok(product);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] CreateProductDto dto)
         {
-            var product = await _productService.CreateProductAsync(dto);
-
-            return CreatedAtAction(
-                nameof(GetProduct),
-                new { id = product.Id }, 
-                product);
+            try
+            {
+                var product = await _productService.CreateProductAsync(dto);
+                return CreatedAtAction(
+                    nameof(GetProduct),
+                    new { id = product.Id },
+                    product);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
         {
-            var updated = await _productService.UpdateProductAsync(id, dto);
-
-            if (updated == null)
-                return NotFound();
-
-            return Ok(updated);
+            try
+            {
+                var updated = await _productService.UpdateProductAsync(id, dto);
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var deleted = await _productService.DeleteProductAsync(id);
-
-            if (!deleted)
-                return NotFound();
-
-            return NoContent();
+            try
+            {
+                await _productService.DeleteProductAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }
